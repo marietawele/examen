@@ -27,8 +27,7 @@ class Article {
       time: json['time'],
       descendants: json['descendants'],
       url: json['url'],
-      kids: json['kids'] != null ? List<int>.from(json['kids']) : [],
-      isFavorite: false, // 🔴 important pour garder la valeur par défaut
+      kids: (json['kids'] as List?)?.whereType<int>().toList() ?? [],
     );
   }
 
@@ -46,6 +45,17 @@ class Article {
   }
 
   factory Article.fromMap(Map<String, dynamic> map) {
+    List<int> parsedKids = [];
+
+    final rawKids = map['kids'];
+
+    if (rawKids is String) {
+      parsedKids =
+          rawKids.split(',').where((e) => e.isNotEmpty).map(int.parse).toList();
+    } else if (rawKids is List) {
+      parsedKids = rawKids.whereType<int>().toList();
+    }
+
     return Article(
       id: map['id'],
       title: map['title'],
@@ -53,10 +63,7 @@ class Article {
       time: map['time'],
       descendants: map['descendants'],
       url: map['url'],
-      kids:
-          map['kids'] != null && map['kids'].isNotEmpty
-              ? map['kids'].split(',').map(int.parse).toList()
-              : [],
+      kids: parsedKids,
       isFavorite: map['isFavorite'] == 1,
     );
   }
