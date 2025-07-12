@@ -3,42 +3,46 @@ import 'package:http/http.dart' as http;
 import '../models/comment.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://hacker-news.firebaseio.com/v0';
+  final baseUrl = 'https://hacker-news.firebaseio.com/v0';
 
   Future<List<int>> fetchTopStoryIds() async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/topstories.json?print=pretty'),
-    );
-
-    if (response.statusCode == 200) {
-      final List<dynamic> ids = json.decode(response.body);
-      return ids.cast<int>();
+    final res = await http.get(Uri.parse('$baseUrl/topstories.json'));
+    if (res.statusCode == 200) {
+      return List<int>.from(json.decode(res.body));
     } else {
-      throw Exception('Failed to load top stories');
-    }
-  }
-
-  Future<Comment> fetchComment(int id) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/item/$id.json?print=pretty'),
-    );
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      return Comment.fromJson(jsonData);
-    } else {
-      throw Exception('Erreur chargement commentaire $id');
+      throw Exception('Échec du chargement des IDs');
     }
   }
 
   Future<Map<String, dynamic>> fetchItem(int id) async {
-    final response = await http.get(
-      Uri.parse('$_baseUrl/item/$id.json?print=pretty'),
-    );
-
-    if (response.statusCode == 200) {
-      return json.decode(response.body);
+    final res = await http.get(Uri.parse('$baseUrl/item/$id.json'));
+    if (res.statusCode == 200) {
+      return json.decode(res.body);
     } else {
-      throw Exception('Failed to load item $id');
+      throw Exception('Échec du chargement de l\'article');
     }
+  }
+
+  Future<Comment> fetchComment(int id) async {
+    final res = await http.get(Uri.parse('$baseUrl/item/$id.json'));
+    if (res.statusCode == 200) {
+      final data = json.decode(res.body);
+      return Comment.fromJson(data);
+    } else {
+      throw Exception('Erreur lors du chargement du commentaire');
+    }
+  }
+
+  Future<List<Comment>> fetchComments(List<int> ids) async {
+    List<Comment> comments = [];
+
+    for (int id in ids) {
+      try {
+        final comment = await fetchComment(id);
+        comments.add(comment);
+      } catch (_) {}
+    }
+
+    return comments;
   }
 }
